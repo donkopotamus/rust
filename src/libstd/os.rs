@@ -903,88 +903,9 @@ pub fn change_dir(p: &Path) -> bool {
     }
 }
 
-#[cfg(unix)]
-/// Returns the platform-specific value of errno
-fn errno_location() -> *mut c_int {
-    #[cfg(any(target_os = "macos",
-              target_os = "ios",
-              target_os = "freebsd"))]
-    fn _errno_location() -> *mut c_int {
-        extern {
-            fn __error() -> *mut c_int;
-        }
-        unsafe {
-            __error()
-        }
-    }
-
-    #[cfg(target_os = "dragonfly")]
-    fn _errno_location() -> *mut c_int {
-        extern {
-            fn __dfly_error() -> *mut c_int;
-        }
-        unsafe {
-            __dfly_error()
-        }
-    }
-
-    #[cfg(any(target_os = "linux", target_os = "android"))]
-    fn _errno_location() -> *mut c_int {
-        extern {
-            fn __errno_location() -> *mut c_int;
-        }
-        unsafe {
-            __errno_location()
-        }
-    }
-
-    _errno_location()
-}
-
-#[cfg(unix)]
 /// Returns the platform-specific value of errno
 pub fn errno() -> int {
-    unsafe {
-        (*errno_location()) as int
-    }
-}
-
-#[cfg(windows)]
-/// Returns the platform-specific value of errno
-pub fn errno() -> uint {
-    use libc::types::os::arch::extra::DWORD;
-
-    #[link_name = "kernel32"]
-    extern "system" {
-        fn GetLastError() -> DWORD;
-    }
-
-    unsafe {
-        GetLastError() as uint
-    }
-}
-
-#[cfg(unix)]
-/// Set the platform-specific value of errno
-pub fn set_errno(e: int) {
-    unsafe {
-        *errno_location() = e as c_int
-    }
-}
-
-#[cfg(windows)]
-/// Set the platform-specific value of errno
-pub fn set_errno(e: uint) {
-    use libc::types::os::arch::extra::DWORD;
-
-    #[link_name = "kernel32"]
-    extern "system" {
-        fn SetLastError(dwErrCode: DWORD);
-    }
-
-    unsafe {
-        SetLastError(e as DWORD)
-    }
+    libc::errno() as int
 }
 
 /// Return the string corresponding to an `errno()` value of `errnum`.
